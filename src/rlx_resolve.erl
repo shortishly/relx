@@ -5,6 +5,7 @@
 
 -include("relx.hrl").
 -include("rlx_log.hrl").
+-include_lib("kernel/include/logger.hrl").
 
 -spec format_error(ErrorDetail::term()) -> iolist().
 format_error({no_goals_specified, {RelName, RelVsn}}) ->
@@ -17,6 +18,7 @@ format_error({app_not_found, AppName, AppVsn}) ->
     io_lib:format("Application needed for release not found: ~p-~s", [AppName, AppVsn]).
 
 solve_release(Release, State0) ->
+    ?LOG_DEBUG(#{release => Release, state => State0}),
     RelName = rlx_release:name(Release),
     RelVsn = rlx_release:vsn(Release),
     ?log_debug("Solving Release ~p-~s", [RelName, RelVsn]),
@@ -51,11 +53,26 @@ solve_release(Release, State0) ->
 
 %% find the app_info records for each application and its deps needed for the release
 subset(Goals, World, LibDirs, CheckCodeLibDirs, ExcludeApps) ->
+    ?LOG_DEBUG(#{goals => Goals,
+                 world => World,
+                 lib_dirs => LibDirs,
+                 check_code_lib_dirs => CheckCodeLibDirs,
+                 exclude_apps => ExcludeApps}),
     {Apps, _} = fold_apps(Goals, World, sets:new(), LibDirs, CheckCodeLibDirs, [], ExcludeApps),
     Apps.
 
 subset(Goal, World, Seen, LibDirs, CheckCodeLibDirs, OptionalApplications, ExcludeApps) ->
+    ?LOG_DEBUG(#{goal => Goal,
+                 world => World,
+                 seen => Seen,
+                 lib_dirs => LibDirs,
+                 check_code_lib_dirs => CheckCodeLibDirs,
+                 exclude_apps => ExcludeApps}),
+
     {Name, Vsn} = name_version(Goal),
+
+    ?LOG_DEBUG(#{name => Name, vsn => Vsn}),
+
     case sets:is_element(Name, Seen) of
         true ->
             {[], Seen};
@@ -138,6 +155,12 @@ name_version({Name, #{vsn := Vsn}}) ->
 %% Lastly, if the application still isn't found then the code path is checked
 %% using `code:lib_dir'.
 find_app(Name, Vsn, Apps, LibDirs, CheckCodeLibDirs) ->
+    ?LOG_DEBUG(#{name => Name,
+                 vsn => Vsn,
+                 apps => Apps,
+                 lib_dirs => LibDirs,
+                 check_code_lib_dirs => CheckCodeLibDirs}),
+
     case maps:find(Name, Apps) of
         {ok, AppInfo} ->
             %% verify the app is the version we want and if not try
@@ -153,6 +176,10 @@ find_app(Name, Vsn, Apps, LibDirs, CheckCodeLibDirs) ->
     end.
 
 search_for_app(Name, Vsn, LibDirs, CheckCodeLibDirs) ->
+    ?LOG_DEBUG(#{name => Name,
+                 vsn => Vsn,
+                 lib_dirs => LibDirs,
+                 check_code_lib_dirs => CheckCodeLibDirs}),
     case find_app_in_dir(Name, Vsn, LibDirs) of
         not_found when CheckCodeLibDirs =:= true ->
             find_app_in_code_path(Name, Vsn);
@@ -170,9 +197,14 @@ search_for_app(Name, Vsn, LibDirs, CheckCodeLibDirs) ->
             end
     end.
 
-find_app_in_dir(_Name, _Vsn, []) ->
+find_app_in_dir(Name, Vsn, [] = Dirs) ->
+    ?LOG_DEBUG(#{name => Name, vsn => Vsn, dirs => Dirs}),
     not_found;
 find_app_in_dir(Name, Vsn, [Dir | Rest]) ->
+    ?LOG_DEBUG(#{name => Name,
+                 vsn => Vsn,
+                 dir => Dir,
+                 rest => Rest}),
     AppFile = filename:join([Dir, "*", "ebin", [Name, ".app"]]),
     case filelib:wildcard(AppFile) of
         [] ->
@@ -189,6 +221,8 @@ find_app_in_dir(Name, Vsn, [Dir | Rest]) ->
     end.
 
 find_app_in_code_path(Name, Vsn) ->
+    ?LOG_DEBUG(#{name => Name, vsn => Vsn}),
+
     case code:lib_dir(Name) of
         {error, bad_name} ->
             not_found;
