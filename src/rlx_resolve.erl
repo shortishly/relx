@@ -232,10 +232,13 @@ find_app_in_code_path(Name, Vsn) ->
 
     case code:lib_dir(Name) of
         {error, bad_name} ->
+            ?LOG_DEBUG(bad_name),
             not_found;
         Dir ->
+            ?LOG_DEBUG(#{dir => Dir}),
             case to_app(Name, Vsn, filename:join([Dir, "ebin", [Name, ".app"]])) of
                 {true, AppInfo} ->
+                    ?LOG_DEBUG(#{app_info => AppInfo}),
                     AppInfo;
                 false ->
                     not_found
@@ -251,6 +254,7 @@ check_app(Name, Vsn, App) ->
         andalso rlx_app_info:vsn(App) =:= Vsn.
 
 to_app(Name, Vsn, AppFilePath) ->
+    ?LOG_DEBUG(#{name => Name, vsn => Vsn, app_file_path => AppFilePath}),
     AppData = case file:consult(AppFilePath) of
                   {ok, [{application, _Name, Data}]} -> Data;
                   Other -> erlang:error(?RLX_ERROR({bad_app_file, AppFilePath, Other}))
