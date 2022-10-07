@@ -79,6 +79,7 @@ subset(Goal, World, Seen, LibDirs, CheckCodeLibDirs, OptionalApplications, Exclu
         _ ->
             case find_app(Name, Vsn, World, LibDirs, CheckCodeLibDirs) of
                 not_found ->
+                    ?LOG_DEBUG(#{name => Name, optional_applications => OptionalApplications}),
                     case lists:member(Name, OptionalApplications) of
                         true ->
                             %% don't add to Seen since optional applications are only
@@ -163,6 +164,7 @@ find_app(Name, Vsn, Apps, LibDirs, CheckCodeLibDirs) ->
 
     case maps:find(Name, Apps) of
         {ok, AppInfo} ->
+            ?LOG_DEBUG(#{app_info => AppInfo}),
             %% verify the app is the version we want and if not try
             %% finding the app-vsn needed in the configured paths
             case check_app(Name, Vsn, AppInfo) of
@@ -182,13 +184,16 @@ search_for_app(Name, Vsn, LibDirs, CheckCodeLibDirs) ->
                  check_code_lib_dirs => CheckCodeLibDirs}),
     case find_app_in_dir(Name, Vsn, LibDirs) of
         not_found when CheckCodeLibDirs =:= true ->
+            ?LOG_DEBUG(#{name => Name, vsn => Vsn, lib_dirs => LibDirs, check_code_lib_dirs => CheckCodeLibDirs}),
             find_app_in_code_path(Name, Vsn);
         not_found when CheckCodeLibDirs =:= false ->
+            ?LOG_DEBUG(#{name => Name, vsn => Vsn, lib_dirs => LibDirs, check_code_lib_dirs => CheckCodeLibDirs}),
             %% app not found in any lib dir we are configured to search
             %% and user set a custom `system_libs' directory so we do
             %% not look in `code:lib_dir'
             not_found;
         AppInfo ->
+            ?LOG_DEBUG(#{app_info => AppInfo}),
             case check_app(Name, Vsn, AppInfo) of
                 true ->
                     AppInfo;
