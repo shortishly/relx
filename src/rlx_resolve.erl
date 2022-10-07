@@ -230,7 +230,7 @@ find_app_in_dir(Name, Vsn, [Dir | Rest]) ->
 find_app_in_code_path(Name, Vsn) ->
     ?LOG_DEBUG(#{name => Name,
                  vsn => Vsn,
-                 get_path => code:get_path(),
+                 get_path => lists:concat(lists:join(":", code:get_path())),
                  root_dir => code:root_dir(),
                  lib_dir => code:lib_dir()}),
     case code:lib_dir(Name) of
