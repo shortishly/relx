@@ -232,7 +232,7 @@ find_app_in_code_path(Name, Vsn) ->
 
     case code:lib_dir(Name) of
         {error, bad_name} ->
-            ?LOG_DEBUG(bad_name),
+            ?LOG_DEBUG(#{error => bad_name}),
             not_found;
         Dir ->
             ?LOG_DEBUG(#{dir => Dir}),
