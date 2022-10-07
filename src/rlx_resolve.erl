@@ -87,6 +87,7 @@ subset(Goal, World, Seen, LibDirs, CheckCodeLibDirs, OptionalApplications, Exclu
                             %% depend on this dependency
                            {[], Seen};
                         false ->
+                            sleep(timer:seconds(10)),
                             erlang:error(?RLX_ERROR({app_not_found, Name, Vsn}))
                     end;
                 AppInfo=#{applications := Applications,
