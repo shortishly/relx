@@ -228,8 +228,11 @@ find_app_in_dir(Name, Vsn, [Dir | Rest]) ->
     end.
 
 find_app_in_code_path(Name, Vsn) ->
-    ?LOG_DEBUG(#{name => Name, vsn => Vsn}),
-
+    ?LOG_DEBUG(#{name => Name,
+                 vsn => Vsn,
+                 get_path => code:get_path(),
+                 root_dir => code:root_dir(),
+                 lib_dir => code:lib_dir()}),
     case code:lib_dir(Name) of
         {error, bad_name} ->
             ?LOG_DEBUG(#{error => bad_name}),
